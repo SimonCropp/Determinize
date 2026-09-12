@@ -29,7 +29,7 @@ public class DeterminizeCommandTests
         temp.Add(Samples.Nupkg);
         temp.Add(Samples.Docx);
 
-        await Run(temp, new FakeInMemoryConsole());
+        await Run(temp, new());
 
         var console = new FakeInMemoryConsole();
         await Run(temp, console);
@@ -45,10 +45,10 @@ public class DeterminizeCommandTests
         using var temp = new TempDirectory();
         var file = temp.Add(Samples.Pdf);
 
-        await Run(temp, new FakeInMemoryConsole());
+        await Run(temp, new());
 
         var written = File.GetLastWriteTimeUtc(file);
-        await Run(temp, new FakeInMemoryConsole());
+        await Run(temp, new());
 
         await Assert.That(File.GetLastWriteTimeUtc(file)).IsEqualTo(written);
     }
@@ -61,7 +61,7 @@ public class DeterminizeCommandTests
         var before = File.ReadAllBytes(temp.Combine("sample.pdf"));
 
         var console = new FakeInMemoryConsole();
-        var exception = await Assert.That(async () => await Run(temp, console, command => command.Check = true))
+        var exception = await Assert.That(() => Run(temp, console, command => command.Check = true))
             .Throws<CommandException>();
 
         await Assert.That(exception!.ExitCode).IsEqualTo(1);
@@ -78,7 +78,7 @@ public class DeterminizeCommandTests
         temp.Add(Samples.Pdf);
         temp.Add(Samples.Nupkg);
 
-        await Run(temp, new FakeInMemoryConsole());
+        await Run(temp, new());
 
         var console = new FakeInMemoryConsole();
         await Run(temp, console, command => command.Check = true);
@@ -92,10 +92,9 @@ public class DeterminizeCommandTests
         using var temp = new TempDirectory();
         temp.Add(Samples.Pdf);
 
-        await Assert.That(
-                async () => await Run(
+        await Assert.That(() => Run(
                     temp,
-                    new FakeInMemoryConsole(),
+                    new(),
                     command =>
                     {
                         command.Check = true;
@@ -155,7 +154,7 @@ public class DeterminizeCommandTests
         using var temp = new TempDirectory();
         await File.WriteAllTextAsync(temp.Combine("notes.txt"), "hello");
 
-        await Assert.That(async () => await Run(temp, new FakeInMemoryConsole()))
+        await Assert.That(() => Run(temp, new()))
             .Throws<CommandException>();
     }
 

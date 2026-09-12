@@ -10,10 +10,18 @@ static class FormatDetector
     // finds. Reach it with -p "*.zip".
     public static string[] PackageExtensions { get; } =
     [
-        ".nupkg", ".snupkg", ".vsix",
-        ".docx", ".docm", ".dotx",
-        ".xlsx", ".xlsm", ".xltx",
-        ".pptx", ".pptm", ".potx"
+        ".nupkg",
+        ".snupkg",
+        ".vsix",
+        ".docx",
+        ".docm",
+        ".dotx",
+        ".xlsx",
+        ".xlsm",
+        ".xltx",
+        ".pptx",
+        ".pptm",
+        ".potx"
     ];
 
     public static Format Detect(string path, byte[] content)

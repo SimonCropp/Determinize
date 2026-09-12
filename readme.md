@@ -45,6 +45,9 @@ A file that is already deterministic is left untouched, so an in place run does 
 
 ## Supported files
 
+[![Build status](https://github.com/SimonCropp/Determinize/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/VerifyTests/Determinize/actions/workflows/ci.yml)
+[![NuGet Status](https://img.shields.io/nuget/v/Determinize.svg?label=Determinize)](https://www.nuget.org/packages/Determinize/)
+
 Which library handles a file is decided by its extension, so one run covers a mixed directory:
 
 | Extension | Handled by |
@@ -87,3 +90,8 @@ Only the packages in a directory, leaving everything else alone:
 ```
 determinize ./artifacts -p "*.nupkg" -p "*.snupkg"
 ```
+
+
+## Icon
+
+https://thenounproject.com/icon/pattern-8435895/
