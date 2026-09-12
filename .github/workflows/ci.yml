@@ -1,0 +1,34 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  build:
+    # All three, because the tool is cross platform and two of its behaviours genuinely differ by
+    # OS: PathComparison switches on file system case sensitivity, and the 8.3 re-check in
+    # FileResolver only has anything to do on Windows.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      # Also packs, since ProjectDefaults sets GeneratePackageOnBuild for a package project in
+      # Release. That is deliberate here: it means a pull request that breaks packaging fails in ci
+      # rather than at the tag.
+      - name: Build
+        run: dotnet build src -c Release
+      - name: Test
+        run: dotnet test src -c Release --no-build --no-restore
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: TestResults/
+          if-no-files-found: ignore

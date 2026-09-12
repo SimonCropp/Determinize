@@ -1,7 +1,7 @@
 # <img src="/src/icon.png" height="30px"> Determinize
 
-[![Build status](https://img.shields.io/appveyor/build/SimonCropp/determinize)](https://ci.appveyor.com/project/SimonCropp/determinize)
-[![NuGet Status](https://img.shields.io/nuget/v/Determinize.svg)](https://www.nuget.org/packages/Determinize/)
+[![Build status](https://github.com/SimonCropp/Determinize/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SimonCropp/Determinize/actions/workflows/ci.yml)
+[![NuGet Status](https://img.shields.io/nuget/v/Determinize.svg?label=Determinize)](https://www.nuget.org/packages/Determinize/)
 
 A [dotnet tool](https://learn.microsoft.com/en-us/dotnet/core/tools/global-tools) that makes files deterministic. Rewrites PDFs and System.IO.Packaging containers (nupkg, docx, xlsx, pptx) so the same source always produces byte-identical output. Helpful for testing, build reproducibility, security verification, and ensuring output integrity across different build environments.
 
@@ -44,9 +44,6 @@ A file that is already deterministic is left untouched, so an in place run does 
 
 
 ## Supported files
-
-[![Build status](https://github.com/SimonCropp/Determinize/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/VerifyTests/Determinize/actions/workflows/ci.yml)
-[![NuGet Status](https://img.shields.io/nuget/v/Determinize.svg?label=Determinize)](https://www.nuget.org/packages/Determinize/)
 
 Which library handles a file is decided by its extension, so one run covers a mixed directory:
 
