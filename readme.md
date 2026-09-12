@@ -39,8 +39,30 @@ determinize <path> [options]
  * `--check` Report which files are not already deterministic without writing anything. Exits with code 1 if any are found.
  * `--continue-on-error` Keep processing the remaining files after a failure, then exit with code 1.
  * `-q|--quiet` Suppress per file and summary output. Errors are still written.
+ * `-v|--verbose` List what changed in each file, indented under it.
 
 A file that is already deterministic is left untouched, so an in place run does not disturb its timestamp.
+
+
+### Seeing what changed
+
+`--verbose` lists what was changed in each file, which for `--check` is the answer to why a file is not reproducible:
+
+```
+determinize ./artifacts -r -v
+
+normalized: artifacts/report.pdf
+  /CreationDate, /ModDate, /ID x2, xmp:CreateDate, xmp:ModifyDate
+  xmp:MetadataDate, xmpMM:DocumentID, XMP packet whitespace
+normalized: artifacts/tool.nupkg
+  reordered, removed .signature.p7s, patched [Content_Types].xml
+  patched _rels/.rels, patched icon.png
+2 files processed, 2 normalized.
+```
+
+PDFs name the field that was neutralized; packages name the entry that was removed or patched. Both come from the underlying libraries rather than being inferred here.
+
+Only real differences are listed. Both libraries apply normalizations to every input alike — entry timestamps, compression, XML formatting — and report none of them, because they are the same for every file and so never the reason one file differs from another. A file whose only difference is one of those is reported as changed with that noted in place of a detail list.
 
 
 ## Supported files

@@ -7,8 +7,8 @@ end over two libraries, consumed as NuGet packages:
 
 | Library | Entry point used | Covers |
 | --- | --- | --- |
-| [DeterministicPdf](https://github.com/SimonCropp/DeterministicPdf) | `PdfNormalizer.Normalize(byte[])` | `.pdf` |
-| [DeterministicIoPackaging](https://github.com/SimonCropp/DeterministicIoPackaging) | `DeterministicPackage.ConvertAsync(Stream, Cancel)` | every System.IO.Packaging container |
+| [DeterministicPdf](https://github.com/SimonCropp/DeterministicPdf) | `PdfNormalizer.Normalize(byte[], out IReadOnlyList<NormalizeChange>)` | `.pdf` |
+| [DeterministicIoPackaging](https://github.com/SimonCropp/DeterministicIoPackaging) | `DeterministicPackage.ConvertWithChangesAsync(Stream, Cancel)` | every System.IO.Packaging container |
 
 Both return a normalized copy rather than writing in place, and both materialize the whole file in a
 buffer — neither is a streaming operation, so neither offers a source/target overload. That is why
@@ -53,6 +53,25 @@ patterns. `FormatDetectorTests.EveryPackageExtensionHasADefaultPattern` pins tha
 Plain `.zip` is handled by the packaging library but is deliberately absent from
 `PackageExtensions`, so a recursive run does not rewrite every archive it finds. `-p "*.zip"` reaches
 it.
+
+## `--verbose` and the change reports
+
+Both libraries report what they altered, and this tool only renders it. Nothing here infers what
+changed by diffing bytes: the two reports are the libraries' own, and that is where a missing or
+wrong detail line has to be fixed.
+
+The shapes differ — `NormalizeChange(Name, Count)` for PDFs, `ConvertChange(Kind, Entry)` for
+packages — so each is flattened to display strings inside `Determinize`, the one place that knows
+which library answered, rather than being carried as two shapes through the printing code.
+`DeterminizeResult` carries the `Format` for the same reason.
+
+Both libraries report **only real differences**, deliberately saying nothing about the normalizations
+they apply to every input alike (timestamps, compression, XML reserialization). So a file can be
+changed with an empty report, and `Detail` substitutes a line saying so rather than printing a
+header with nothing under it.
+
+Detail is comma separated and wrapped at 76 columns by `Wrap`, which is why a PDF's short field names
+share a line while a package's long entry paths each take one.
 
 ## Idempotence is the load bearing property
 

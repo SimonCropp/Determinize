@@ -184,6 +184,124 @@ public class DeterminizeCommandTests
         await Assert.That(console.ReadOutputString()).Contains("normalized: ");
     }
 
+    [Test]
+    public async Task VerboseNamesTheFieldsChangedInAPdf()
+    {
+        using var temp = new TempDirectory();
+        temp.Add(Samples.Pdf);
+
+        var console = new FakeInMemoryConsole();
+        await Run(temp, console, command => command.Verbose = true);
+
+        var output = console.ReadOutputString();
+        await Assert.That(output).Contains("/CreationDate");
+        await Assert.That(output).Contains("xmp:CreateDate");
+    }
+
+    [Test]
+    public async Task VerboseNamesTheEntriesChangedInAPackage()
+    {
+        using var temp = new TempDirectory();
+        temp.Add(Samples.Nupkg);
+
+        var console = new FakeInMemoryConsole();
+        await Run(temp, console, command => command.Verbose = true);
+
+        var output = console.ReadOutputString();
+        await Assert.That(output).Contains("removed ");
+        await Assert.That(output).Contains("psmdcp");
+        await Assert.That(output).Contains("patched _rels/.rels");
+    }
+
+    [Test]
+    public async Task DetailIsIndentedUnderItsFile()
+    {
+        using var temp = new TempDirectory();
+        temp.Add(Samples.Pdf);
+
+        var console = new FakeInMemoryConsole();
+        await Run(temp, console, command => command.Verbose = true);
+
+        var lines = console.ReadOutputString()
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(_ => _.TrimEnd('\r'))
+            .ToList();
+
+        await Assert.That(lines[0]).StartsWith("normalized: ");
+        await Assert.That(lines[1]).StartsWith("  ");
+    }
+
+    [Test]
+    public async Task WithoutVerboseThereIsNoDetail()
+    {
+        using var temp = new TempDirectory();
+        temp.Add(Samples.Pdf);
+
+        var console = new FakeInMemoryConsole();
+        await Run(temp, console);
+
+        await Assert.That(console.ReadOutputString()).DoesNotContain("/CreationDate");
+    }
+
+    // Nothing changed, so there is nothing to explain. Printing a header with an empty body under it
+    // would be worse than printing neither.
+    [Test]
+    public async Task AnUnchangedFileHasNoDetail()
+    {
+        using var temp = new TempDirectory();
+        temp.Add(Samples.Pdf);
+        await Run(temp, new FakeInMemoryConsole());
+
+        var console = new FakeInMemoryConsole();
+        await Run(temp, console, command => command.Verbose = true);
+
+        var output = console.ReadOutputString();
+        await Assert.That(output).Contains("unchanged: ");
+        await Assert.That(output).DoesNotContain("/CreationDate");
+    }
+
+    [Test]
+    public async Task CheckExplainsWhyAFileIsNotDeterministic()
+    {
+        using var temp = new TempDirectory();
+        temp.Add(Samples.Pdf);
+
+        var console = new FakeInMemoryConsole();
+        await Assert.That(
+                () => Run(
+                    temp,
+                    console,
+                    command =>
+                    {
+                        command.Check = true;
+                        command.Verbose = true;
+                    }))
+            .Throws<CommandException>();
+
+        var output = console.ReadOutputString();
+        await Assert.That(output).Contains("not deterministic: ");
+        await Assert.That(output).Contains("/CreationDate");
+    }
+
+    [Test]
+    public async Task QuietBeatsVerbose()
+    {
+        using var temp = new TempDirectory();
+        temp.Add(Samples.Pdf);
+
+        var console = new FakeInMemoryConsole();
+        await Run(
+            temp,
+            console,
+            command =>
+            {
+                command.Verbose = true;
+                command.Quiet = true;
+            });
+
+        await Assert.That(console.ReadOutputString()).IsEmpty();
+    }
+
     static async Task Run(TempDirectory temp, FakeInMemoryConsole console, Action<DeterminizeCommand>? configure = null)
     {
         var command = new DeterminizeCommand

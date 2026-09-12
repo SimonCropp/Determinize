@@ -51,6 +51,12 @@ public partial class DeterminizeCommand : ICommand
         Description = "Suppress per file and summary output. Errors are still written.")]
     public bool Quiet { get; set; }
 
+    [CommandOption(
+        "verbose",
+        'v',
+        Description = "List what changed in each file, indented under it.")]
+    public bool Verbose { get; set; }
+
     public async ValueTask ExecuteAsync(IConsole console)
     {
         if (Check &&
@@ -104,13 +110,14 @@ public partial class DeterminizeCommand : ICommand
     {
         var source = await File.ReadAllBytesAsync(job.Source, cancel);
         var result = await Determinize(source, job.Source, cancel);
-        var isChanged = !result.AsSpan().SequenceEqual(source);
+        var isChanged = !result.Data.AsSpan().SequenceEqual(source);
 
         if (Check)
         {
             if (isChanged)
             {
                 await Write(console, $"not deterministic: {Relative(job.Source)}");
+                await WriteDetail(console, result, isChanged);
             }
 
             return isChanged;
@@ -127,7 +134,7 @@ public partial class DeterminizeCommand : ICommand
                 Directory.CreateDirectory(directory);
             }
 
-            await File.WriteAllBytesAsync(job.Target, result, cancel);
+            await File.WriteAllBytesAsync(job.Target, result.Data, cancel);
         }
 
         var status = isChanged ? "normalized" : "unchanged";
@@ -140,23 +147,112 @@ public partial class DeterminizeCommand : ICommand
             await Write(console, $"{status}: {Relative(job.Source)} -> {Relative(job.Target)}");
         }
 
+        await WriteDetail(console, result, isChanged);
+
         return isChanged;
     }
 
-    static async Task<byte[]> Determinize(byte[] source, string path, Cancel cancel)
+    static async Task<DeterminizeResult> Determinize(byte[] source, string path, Cancel cancel)
     {
-        // No async overload is worth taking here: the bytes are already read, and what is left is
-        // synchronous work over the buffer.
-        if (FormatDetector.Detect(path, source) == Format.Pdf)
+        var format = FormatDetector.Detect(path, source);
+
+        if (format == Format.Pdf)
         {
-            return PdfNormalizer.Normalize(source);
+            // No async overload is worth taking here: the bytes are already read, and what is left
+            // is synchronous work over the buffer.
+            var normalized = PdfNormalizer.Normalize(source, out var changes);
+            return new(format, normalized, changes.Select(Describe).ToList());
         }
 
         // Read from a copy rather than the file: an in place run overwrites the file the conversion
         // read from.
         using var sourceStream = new MemoryStream(source, writable: false);
-        using var targetStream = await DeterministicPackage.ConvertAsync(sourceStream, cancel);
-        return targetStream.ToArray();
+        using var converted = await DeterministicPackage.ConvertWithChangesAsync(sourceStream, cancel);
+        return new(format, converted.Stream.ToArray(), converted.Changes.Select(Describe).ToList());
+    }
+
+    static string Describe(NormalizeChange change)
+    {
+        if (change.Count == 1)
+        {
+            return change.Name;
+        }
+
+        return $"{change.Name} x{change.Count}";
+    }
+
+    static string Describe(ConvertChange change)
+    {
+        var kind = change.Kind.ToString().ToLowerInvariant();
+        if (change.Entry == null)
+        {
+            return kind;
+        }
+
+        return $"{kind} {change.Entry}";
+    }
+
+    async Task WriteDetail(IConsole console, DeterminizeResult result, bool isChanged)
+    {
+        if (!Verbose ||
+            Quiet ||
+            !isChanged)
+        {
+            return;
+        }
+
+        foreach (var line in Wrap(Detail(result)))
+        {
+            await console.Output.WriteLineAsync($"  {line}");
+        }
+    }
+
+    // Both libraries report only what actually differed, and deliberately say nothing about the
+    // normalizations they apply to every input alike. So a file can change with nothing to report -
+    // a package whose entries were merely restamped and recompressed - and saying so beats printing
+    // a header with nothing under it.
+    static IReadOnlyList<string> Detail(DeterminizeResult result)
+    {
+        if (result.Changes.Count > 0)
+        {
+            return result.Changes;
+        }
+
+        if (result.Format == Format.Package)
+        {
+            return ["entry timestamps, compression and formatting"];
+        }
+
+        return ["bytes outside any reported field"];
+    }
+
+    // Comma separated and wrapped, so a PDF's handful of short field names share a line while a
+    // package's long entry paths each get one of their own.
+    static IEnumerable<string> Wrap(IReadOnlyList<string> values)
+    {
+        const int width = 76;
+        var line = new StringBuilder();
+        foreach (var value in values)
+        {
+            if (line.Length > 0 &&
+                line.Length + 2 + value.Length > width)
+            {
+                yield return line.ToString();
+                line.Clear();
+            }
+
+            if (line.Length > 0)
+            {
+                line.Append(", ");
+            }
+
+            line.Append(value);
+        }
+
+        if (line.Length > 0)
+        {
+            yield return line.ToString();
+        }
     }
 
     async Task WriteSummary(IConsole console, int total, int changed, int failed)
