@@ -1,6 +1,6 @@
 # <img src="/src/icon.png" height="30px"> Determinize
 
-[![Build status](https://github.com/SimonCropp/Determinize/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/SimonCropp/Determinize/actions/workflows/ci.yml)
+[![Build status](https://github.com/SimonCropp/Determinize/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/SimonCropp/Determinize/actions/workflows/build.yml)
 [![NuGet Status](https://img.shields.io/nuget/v/Determinize.svg?label=Determinize)](https://www.nuget.org/packages/Determinize/)
 
 A [dotnet tool](https://learn.microsoft.com/en-us/dotnet/core/tools/global-tools) that makes files deterministic. Rewrites PDFs and System.IO.Packaging containers (nupkg, docx, xlsx, pptx) so the same source always produces byte-identical output. Helpful for testing, build reproducibility, security verification, and ensuring output integrity across different build environments.
