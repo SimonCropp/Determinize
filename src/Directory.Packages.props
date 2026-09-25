@@ -9,9 +9,9 @@
     <PackageVersion Include="DeterministicPdf" Version="2.0.2" />
     <!-- Transitive, via DeterministicIoPackaging's net10.0 group. Named here because transitive
          pinning is on, so what the tool ships is decided in this file rather than by resolution. -->
+    <PackageVersion Include="Sbom" Version="0.2.0" />
     <PackageVersion Include="System.IO.Hashing" Version="10.0.12" />
     <PackageVersion Include="ProjectDefaults" Version="1.0.181" />
     <PackageVersion Include="TUnit" Version="1.69.0" />
-    <PackageVersion Include="Microsoft.Sbom.Targets" Version="4.1.13" />
   </ItemGroup>
 </Project>
