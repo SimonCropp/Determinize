@@ -3,11 +3,14 @@
 // determinize the fixtures on the first run and pass vacuously on every run after.
 static class Samples
 {
-    public static string Directory { get; } = Path.Combine(AppContext.BaseDirectory, "samples");
+    public static string Directory { get; } = FullPath(ProjectFiles.samples);
 
-    public static string Pdf { get; } = Path.Combine(Directory, "sample.pdf");
+    public static string Pdf { get; } = FullPath(ProjectFiles.samples.sample_pdf);
 
-    public static string Nupkg { get; } = Path.Combine(Directory, "sample.nupkg");
+    public static string Nupkg { get; } = FullPath(ProjectFiles.samples.sample_nupkg);
 
-    public static string Docx { get; } = Path.Combine(Directory, "sample.docx");
+    public static string Docx { get; } = FullPath(ProjectFiles.samples.sample_docx);
+
+    static string FullPath(string relative) =>
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, relative));
 }
