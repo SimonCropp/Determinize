@@ -7,13 +7,20 @@ end over two libraries, consumed as NuGet packages:
 
 | Library | Entry point used | Covers |
 | --- | --- | --- |
-| [DeterministicPdf](https://github.com/SimonCropp/DeterministicPdf) | `PdfNormalizer.Normalize(byte[], out IReadOnlyList<NormalizeChange>)` | `.pdf` |
+| [DeterministicPdf](https://github.com/SimonCropp/DeterministicPdf) | `PdfNormalizer.Normalize(byte[], bool stripEmbeddedFonts, out IReadOnlyList<NormalizeChange>)` | `.pdf` |
 | [DeterministicIoPackaging](https://github.com/SimonCropp/DeterministicIoPackaging) | `DeterministicPackage.ConvertWithChangesAsync(Stream, Cancel)` | every System.IO.Packaging container |
 
 Both return a normalized copy rather than writing in place, and both materialize the whole file in a
 buffer — neither is a streaming operation, so neither offers a source/target overload. That is why
 `Handle` reads the file to a `byte[]` first and compares the result against it to decide whether
 anything changed.
+
+`--strip-embedded-fonts` is the one option that reaches into a library: it is passed straight through
+as `stripEmbeddedFonts`, and only the PDF library has it. It is opt-in because it is lossy (the font
+programs are removed, for producers that embed the machine's installed fonts). The removed entries
+come back in the change report as `/FontFile`, `/FontFile2` or `/FontFile3`, so `--verbose` needs
+nothing of its own. The tests for it use `samples/embedded-font.pdf`, because `sample.pdf` embeds no
+font.
 
 ## Build and test
 

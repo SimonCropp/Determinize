@@ -7,6 +7,9 @@ static class Samples
 
     public static string Pdf { get; } = FullPath(ProjectFiles.samples.sample_pdf);
 
+    // Unlike sample.pdf, this one embeds a font program, which is what --strip-embedded-fonts removes.
+    public static string PdfWithEmbeddedFont { get; } = FullPath(ProjectFiles.samples.embedded_font_pdf);
+
     public static string Nupkg { get; } = FullPath(ProjectFiles.samples.sample_nupkg);
 
     public static string Docx { get; } = FullPath(ProjectFiles.samples.sample_docx);

@@ -40,8 +40,26 @@ determinize <path> [options]
  * `--continue-on-error` Keep processing the remaining files after a failure, then exit with code 1.
  * `-q|--quiet` Suppress per file and summary output. Errors are still written.
  * `-v|--verbose` List what changed in each file, indented under it.
+ * `--strip-embedded-fonts` Remove the embedded font programs from PDFs. See [Stripping embedded fonts](#stripping-embedded-fonts).
 
 A file that is already deterministic is left untouched, so an in place run does not disturb its timestamp.
+
+
+### Stripping embedded fonts
+
+Some PDF producers embed a subset of whichever copy of a font the machine has installed, so a developer machine and a build agent with different versions of one font produce different bytes for the same document. No amount of neutralizing fields reconciles them: the font programs themselves differ.
+
+`--strip-embedded-fonts` removes the font programs, leaving each font named but not embedded:
+
+```
+determinize ./artifacts -r --strip-embedded-fonts
+```
+
+This is lossy, which is why it is not the default: a viewer opening the result substitutes fonts of its own. It suits a file that is compared rather than read. It has no effect on packages.
+
+With `--check`, a PDF that still embeds a font is reported as not deterministic. Each removed font shows under `--verbose` as the entry that pointed at it (`/FontFile2`).
+
+A PDF that cannot be safely rewritten keeps its fonts; [DeterministicPdf](https://github.com/SimonCropp/DeterministicPdf#stripping-embedded-fonts) lists which.
 
 
 ### Seeing what changed
