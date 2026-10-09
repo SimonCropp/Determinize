@@ -57,6 +57,11 @@ public partial class DeterminizeCommand : ICommand
         Description = "List what changed in each file, indented under it.")]
     public bool Verbose { get; set; }
 
+    [CommandOption(
+        "strip-embedded-fonts",
+        Description = "Remove the embedded font programs from PDFs, leaving each font named but not embedded. For producers that embed the machine's installed fonts. Lossy: a viewer substitutes its own fonts.")]
+    public bool StripEmbeddedFonts { get; set; }
+
     public async ValueTask ExecuteAsync(IConsole console)
     {
         if (Check &&
@@ -109,7 +114,7 @@ public partial class DeterminizeCommand : ICommand
     async Task<bool> Handle(IConsole console, FileJob job, Cancel cancel)
     {
         var source = await File.ReadAllBytesAsync(job.Source, cancel);
-        var result = await Determinize(source, job.Source, cancel);
+        var result = await Determinize(source, job.Source, StripEmbeddedFonts, cancel);
         var isChanged = !result.Data.AsSpan().SequenceEqual(source);
 
         if (Check)
@@ -152,7 +157,7 @@ public partial class DeterminizeCommand : ICommand
         return isChanged;
     }
 
-    static async Task<DeterminizeResult> Determinize(byte[] source, string path, Cancel cancel)
+    static async Task<DeterminizeResult> Determinize(byte[] source, string path, bool stripEmbeddedFonts, Cancel cancel)
     {
         var format = FormatDetector.Detect(path, source);
 
@@ -160,7 +165,7 @@ public partial class DeterminizeCommand : ICommand
         {
             // No async overload is worth taking here: the bytes are already read, and what is left
             // is synchronous work over the buffer.
-            var normalized = PdfNormalizer.Normalize(source, out var changes);
+            var normalized = PdfNormalizer.Normalize(source, stripEmbeddedFonts, out var changes);
             return new(format, normalized, changes.Select(Describe).ToList());
         }
 

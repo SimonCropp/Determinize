@@ -302,6 +302,79 @@ public class DeterminizeCommandTests
         await Assert.That(console.ReadOutputString()).IsEmpty();
     }
 
+    [Test]
+    public async Task FontsStayEmbeddedUnlessAsked()
+    {
+        using var temp = new TempDirectory();
+        var file = temp.Add(Samples.PdfWithEmbeddedFont);
+
+        await Run(temp, new());
+
+        await Assert.That(Encoding.Latin1.GetString(File.ReadAllBytes(file))).Contains("/FontFile");
+    }
+
+    [Test]
+    public async Task StripEmbeddedFontsRemovesTheFontProgram()
+    {
+        using var temp = new TempDirectory();
+        var file = temp.Add(Samples.PdfWithEmbeddedFont);
+        var before = new FileInfo(file).Length;
+
+        var console = new FakeInMemoryConsole();
+        await Run(
+            temp,
+            console,
+            command =>
+            {
+                command.StripEmbeddedFonts = true;
+                command.Verbose = true;
+            });
+
+        await Assert.That(Encoding.Latin1.GetString(File.ReadAllBytes(file))).DoesNotContain("/FontFile");
+        await Assert.That(new FileInfo(file).Length).IsLessThan(before);
+
+        // Reported under the key the library removed, like any other change.
+        await Assert.That(console.ReadOutputString()).Contains("/FontFile");
+    }
+
+    // A file normalized without the option still embeds its fonts, so a later run with it has work
+    // to do, and --check with it says so rather than passing the file as already deterministic.
+    [Test]
+    public async Task CheckWithStripEmbeddedFontsFlagsAFileThatStillEmbedsOne()
+    {
+        using var temp = new TempDirectory();
+        temp.Add(Samples.PdfWithEmbeddedFont);
+        await Run(temp, new());
+
+        var console = new FakeInMemoryConsole();
+        await Assert.That(
+                () => Run(
+                    temp,
+                    console,
+                    command =>
+                    {
+                        command.Check = true;
+                        command.StripEmbeddedFonts = true;
+                    }))
+            .Throws<CommandException>();
+
+        await Assert.That(console.ReadOutputString()).Contains("not deterministic: ");
+    }
+
+    [Test]
+    public async Task ASecondStripChangesNothing()
+    {
+        using var temp = new TempDirectory();
+        temp.Add(Samples.PdfWithEmbeddedFont);
+
+        await Run(temp, new(), command => command.StripEmbeddedFonts = true);
+
+        var console = new FakeInMemoryConsole();
+        await Run(temp, console, command => command.StripEmbeddedFonts = true);
+
+        await Assert.That(console.ReadOutputString()).Contains("1 file processed, 0 normalized.");
+    }
+
     static async Task Run(TempDirectory temp, FakeInMemoryConsole console, Action<DeterminizeCommand>? configure = null)
     {
         var command = new DeterminizeCommand
