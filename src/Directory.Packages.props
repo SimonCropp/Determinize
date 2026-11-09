@@ -11,7 +11,7 @@
          pinning is on, so what the tool ships is decided in this file rather than by resolution. -->
     <PackageVersion Include="Sbom" Version="0.3.1" />
     <PackageVersion Include="System.IO.Hashing" Version="10.0.14" />
-    <PackageVersion Include="ProjectDefaults" Version="1.0.187" />
+    <PackageVersion Include="ProjectDefaults" Version="1.0.188" />
     <PackageVersion Include="ProjectFiles" Version="1.6.0" />
     <PackageVersion Include="TUnit" Version="1.81.10" />
   </ItemGroup>
