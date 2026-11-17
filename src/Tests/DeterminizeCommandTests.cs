@@ -58,7 +58,7 @@ public class DeterminizeCommandTests
     {
         using var temp = new TempDirectory();
         temp.Add(Samples.Pdf);
-        var before = File.ReadAllBytes(temp.Combine("sample.pdf"));
+        var before = await File.ReadAllBytesAsync(temp.Combine("sample.pdf"));
 
         var console = new FakeInMemoryConsole();
         var exception = await Assert.That(() => Run(temp, console, command => command.Check = true))
@@ -68,7 +68,7 @@ public class DeterminizeCommandTests
         await Assert.That(console.ReadOutputString()).Contains("not deterministic: ");
 
         // --check writes nothing.
-        await Assert.That(File.ReadAllBytes(temp.Combine("sample.pdf"))).IsEquivalentTo(before);
+        await Assert.That(await File.ReadAllBytesAsync(temp.Combine("sample.pdf"))).IsEquivalentTo(before);
     }
 
     [Test]
@@ -108,7 +108,7 @@ public class DeterminizeCommandTests
     {
         using var temp = new TempDirectory();
         var source = temp.Add(Samples.Pdf, Path.Combine("input", "sample.pdf"));
-        var before = File.ReadAllBytes(source);
+        var before = await File.ReadAllBytesAsync(source);
         var target = temp.Combine("output");
 
         var console = new FakeInMemoryConsole();
@@ -119,7 +119,7 @@ public class DeterminizeCommandTests
         };
         await command.ExecuteAsync(console);
 
-        await Assert.That(File.ReadAllBytes(source)).IsEquivalentTo(before);
+        await Assert.That(await File.ReadAllBytesAsync(source)).IsEquivalentTo(before);
         await Assert.That(File.Exists(Path.Combine(target, "sample.pdf"))).IsTrue();
         await Assert.That(console.ReadOutputString()).Contains(" -> ");
     }
@@ -310,7 +310,7 @@ public class DeterminizeCommandTests
 
         await Run(temp, new());
 
-        await Assert.That(Encoding.Latin1.GetString(File.ReadAllBytes(file))).Contains("/FontFile");
+        await Assert.That(Encoding.Latin1.GetString(await File.ReadAllBytesAsync(file))).Contains("/FontFile");
     }
 
     [Test]
@@ -330,7 +330,7 @@ public class DeterminizeCommandTests
                 command.Verbose = true;
             });
 
-        await Assert.That(Encoding.Latin1.GetString(File.ReadAllBytes(file))).DoesNotContain("/FontFile");
+        await Assert.That(Encoding.Latin1.GetString(await File.ReadAllBytesAsync(file))).DoesNotContain("/FontFile");
         await Assert.That(new FileInfo(file).Length).IsLessThan(before);
 
         // Reported under the key the library removed, like any other change.
