@@ -13,6 +13,6 @@
     <PackageVersion Include="System.IO.Hashing" Version="11.0.0" />
     <PackageVersion Include="ProjectDefaults" Version="1.0.190" />
     <PackageVersion Include="ProjectFiles" Version="1.6.0" />
-    <PackageVersion Include="TUnit" Version="1.86.6" />
+    <PackageVersion Include="TUnit" Version="1.87.0" />
   </ItemGroup>
 </Project>
